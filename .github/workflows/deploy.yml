@@ -5,9 +5,6 @@ on:
   push:
     branches:
       - master
-  pull_request:
-    branches:
-      - master
 
 jobs:
   cicd-deploy:
@@ -27,12 +24,10 @@ jobs:
           echo "${{ secrets.APPLICATION_PRO }}" > ./src/main/resources/application.properties
           ls ./src/main/resources/
 
-      - name: 빌드
+      - name: 단위 테스트 및 빌드
         run: |
           chmod +x ./gradlew
           ./gradlew clean build
-          pwd
-          ls ./build/libs
 
       - name: 관리상 빌드된 결과물의 이름을 변경 처리
         run: |

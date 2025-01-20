@@ -1,4 +1,4 @@
-name: Deploy for ci/cd
+name: Backend for ci/cd
 
 # 트리거
 on:
@@ -22,9 +22,44 @@ jobs:
           distribution: 'temurin' # See 'Supported distributions' for available options
           java-version: '17'
 
+      - name: application.properties 동적 생성
+        run: |
+          echo "${{ secrets.APPLICATION_PRO }}" > ./src/main/resources/application.properties
+          ls ./src/main/resources/
+
       - name: 빌드
         run: |
           chmod +x ./gradlew
           ./gradlew clean build
           pwd
           ls ./build/libs
+
+      - name: 관리상 빌드된 결과물의 이름을 변경 처리
+        run: |
+          mv ./build/libs/*SNAPSHOT.jar ./run.jar
+          ls
+
+      - name: EC2에 jar파일 업로드
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          source: run.jar
+          target: /home/ubuntu/server/demo
+
+      - name: SSH로 ec2에 정리후, 접속후 서버가동
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script_stop: true
+          script: |
+            rm -rf /home/ubuntu/server/web
+            mkdir /home/ubuntu/server/web
+            mv /home/ubuntu/server/demo/run.jar /home/ubuntu/server/web/run.jar
+            cd /home/ubuntu/server/web
+            sudo fuser -k -n tcp 8080 || true
+            nohup java -jar run.jar > ./output.log 2>&1 &
+            rm -rf /home/ubuntu/server/demo

@@ -1,0 +1,25 @@
+name: Deploy for ci/cd
+
+# 트리거
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  cicd-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout(불러오기) 수행
+        uses: actions/checkout@v4
+
+      - name: JDK 17 버전 설치
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin' # See 'Supported distributions' for available options
+          java-version: '17'
+
+
